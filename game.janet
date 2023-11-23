@@ -1,5 +1,23 @@
 (def PI math/pi)
 
+# Color palette https://lospec.com/palette-list/pico-8
+(def BLACK 0x000000FF)
+(def NAVY 0x1D2B53FF)
+(def MAROON 0x7E2553FF)
+(def GREEN 0x008751FF)
+(def BROWN 0xAB5236FF)
+(def CHARCOAL 0x5F574FFF)
+(def GRAY 0xC2C3C7FF)
+(def WHITE 0xFFF1E8FF)
+(def RED 0xFF004DFF)
+(def ORANGE 0xFFA300FF)
+(def YELLOW 0xFFEC27FF)
+(def LIME 0x00E436FF)
+(def BLUE 0x29ADFFFF)
+(def HEATHER 0x83769CF)
+(def PINK 0xFF77A8FF)
+(def SKIN 0xFFCCAAFF)
+
 (def W 800)
 (def H 450)
 (def +player-max-life+ 5)
@@ -88,7 +106,7 @@
     :friction 0.92
     :tick 20
     :vel @[(math/cos angle) (math/sin angle)]
-    :colors @[0xF4F4F4FF 0x94B0C2FF 0x566C86FF 0x333C57FF]
+    :colors @[SKIN PINK HEATHER BLUE] # @[0x333C57FF 0x566C86FF 0x94B0C2FF 0xF4F4F4FF]
     :update particle/update
     :draw particle/draw})
 
@@ -97,9 +115,9 @@
     (array/push PARTICLES (particle/init point))))
 
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
-  (draw-rectangle x y w h :black)
+  (draw-rectangle x y w h LIME)
   (for i 0 life
-    (draw-rectangle (+ 20 (* 40 i)) (- H 30) 35 10 :light-gray)))
+    (draw-rectangle (+ 20 (* 40 i)) (- H 30) 35 10 CHARCOAL)))
 
 (defn player/update [self]
   (when (key-down? :left)
@@ -119,7 +137,7 @@
    :update player/update})
 
 (defn ball/draw [{:pos pos :r r}]
-  (draw-circle-v pos r :maroon))
+  (draw-circle-v pos r BLUE))
 
 (defn ball/update [self]
   # ball launching
@@ -198,8 +216,8 @@
       (def brick @{:pos [(* j brick-w) (+ (* i brick-h) initial-down-position)]
                    :size [brick-w brick-h]
                    :color (if (zero? (% (+ j i) 2))
-                            :gray
-                            :dark-gray)
+                            YELLOW
+                            ORANGE)
                    :break brick/break
                    :hidden false
                    :draw brick/draw
@@ -231,7 +249,7 @@
 (defn game/draw []
   (begin-drawing)
 
-  (clear-background :ray-white)
+  (clear-background BLACK)
 
   (when (not GAMEOVER?)
     (system/draw PARTICLES)
@@ -242,14 +260,14 @@
                  (- (div W 2)
                     (div (measure-text "GAME PAUSED" 40) 2))
                  (- (div H 2) 40)
-                 40 :gray)))
+                 40 ORANGE)))
 
   (when GAMEOVER?
     (draw-text "PRESS [ENTER] TO PLAY AGIAN"
                (- (div W 2)
                   (div (measure-text "PRESS [ENTER] TO PLAY AGIAN" 20) 2))
                (- (div H 2) 50)
-               20 :black))
+               20 YELLOW))
 
   (end-drawing))
 
