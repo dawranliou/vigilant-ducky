@@ -1,13 +1,17 @@
+(import spork/netrepl)
+(use jaylib)
+
+(def PI math/pi)
+
 (def W 800)
 (def H 450)
 (def +player-max-life+ 5)
 (def +lines-of-bricks+ 5)
 (def +bricks-per-line+ 10)
 
+(var TICK 0)
 (var GAMEOVER? false)
 (var PAUSED? false)
-
-(def ENTITIES @[])
 
 (defn- has-all-keys? [ds keys]
   (all |(has-key? ds $) keys))
@@ -21,6 +25,9 @@
 
 (defn system/all [entities components pred]
   (all pred (filter |(has-all-keys? $ components) entities)))
+
+
+(def ENTITIES @[])
 
 (defn system/draw [&opt entities]
   (default entities ENTITIES)
@@ -38,11 +45,51 @@
                                                   [;(e :pos) ;(e :size)])
                   (:break e)))))
 
+(defn system/gc [&opt entities]
+  (default entities ENTITIES)
+  (loop [i :down-to [(dec (length entities)) 0]
+         :let [e (get entities i)]]
+    (when (e :remove)
+      (array/remove entities i))))
+
+# Particle system
+
+(defn particle/update [self]
+  (var final-update? false)
+  (let [{:friction friction :r r :vel [vx vy] :tick tick :colors colors} self]
+    (update-in self [:pos 0] + vx)
+    (update-in self [:pos 1] + vy)
+    (update-in self [:vel 0] * friction)
+    (update-in self [:vel 1] * friction)
+    (when (< tick 5)
+      (update self :r / 1.1)
+      (when (and (zero? (% TICK 10)) (pos? (length colors)))
+        (array/pop (self :colors))))
+    (update self :tick + -1 (math/random)))
+
+  (when (< (self :r) 1)
+    (set (self :remove) true)))
+
+(defn particle/draw [{:pos pos :r r :colors colors}]
+  (draw-circle-v pos r (array/peek colors)))
+
+(defn particle/init [pos]
+  (def angle (+ (* (math/random) PI) PI))
+  @{:pos @[;pos]
+    :r (* (math/random) 3)
+    :friction 0.92
+    :tick 20
+    :vel @[(math/cos angle) (math/sin angle)]
+    :colors @[0xF4F4F4FF 0x94B0C2FF 0x566C86FF 0x333C57FF]
+    :update particle/update
+    :draw particle/draw})
+
+(defn particle-system/dust-clout-at [point &opt count]
+  (for i 0 (default count 8)
+    (array/push PARTICLES (particle/init point))))
+
 (def PLAYER @{})
 (def BALL @{})
-
-(import spork/netrepl)
-(use jaylib)
 
 (defn- noop [& args] nil)
 
@@ -105,6 +152,7 @@
   (let [{:pos [x y] :size [w h]} PLAYER
         {:pos [bx by] :r br :v [bvx bvy]} self]
     (when (check-collision-circle-rec [bx by] br [x y w h])
+      (particle-system/dust-clout-at [bx by])
       (when (pos? bvy)
         (update-in self [:v 1] * -1)
         (put-in self [:v 0] (div (* (- bx x (div w 2)) 5) (div w 2))))))
@@ -171,6 +219,8 @@
 
     (when (not PAUSED?)
       (system/update)
+      (system/update PARTICLES)
+      (system/gc PARTICLES)
       (game/over?))))
 
 (defn game/draw []
@@ -179,6 +229,7 @@
   (clear-background :ray-white)
 
   (when (not GAMEOVER?)
+    (system/draw PARTICLES)
     (system/draw)
 
     (when PAUSED?
@@ -205,7 +256,8 @@
   (while (not (window-should-close))
     (ev/sleep 0)
     (game/update)
-    (game/draw))
+    (game/draw)
+    (++ TICK))
 
   (close-window))
 
