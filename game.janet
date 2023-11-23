@@ -47,10 +47,11 @@
 (defn system/collide [ball &opt entities]
   (default entities ENTITIES)
   (system/do entities [:break]
-              (fn [e]
-                (when (check-collision-circle-rec (ball :pos) (ball :r)
-                                                  [;(e :pos) ;(e :size)])
-                  (:break e)))))
+             (fn [e]
+               (when (and (not (e :hidden))
+                          (check-collision-circle-rec (ball :pos) (ball :r)
+                                                      [;(e :pos) ;(e :size)]))
+                 (:break e)))))
 
 (defn system/gc [&opt entities]
   (default entities ENTITIES)
