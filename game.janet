@@ -70,8 +70,8 @@
     (update-in self [:vel 0] * friction)
     (update-in self [:vel 1] * friction)
     (when (< tick 5)
-      (update self :r / 1.1)
-      (when (and (zero? (% FRAME 10)) (pos? (length colors)))
+      (/= (self :r) 1.1)
+      (when (and (zero? (% FRAME 10)) (< 1 (length colors)))
         (array/pop (self :colors))))
     (update self :tick + -1 (math/random)))
 
