@@ -16,8 +16,10 @@
 (def PLAYER @{})
 (def BALL @{})
 
-(import spork/netrepl)
+(def DEV? true)
+
 (use jaylib)
+(import spork/netrepl)
 
 # ECS
 
@@ -267,7 +269,9 @@
 # (start)
 
 (defn main [&]
-  (netrepl/server-single "127.0.0.1" "9365" (fiber/getenv (fiber/current))))
+  (if DEV?
+    (netrepl/server-single "127.0.0.1" "9365" (fiber/getenv (fiber/current)))
+    (start)))
 
 (def dialog
   ``
