@@ -18,11 +18,19 @@
 (def PINK 0xFF77A8FF)
 (def SKIN 0xFFCCAAFF)
 
-(def W 800)
-(def H 450)
-(def +player-max-life+ 5)
-(def +lines-of-bricks+ 5)
-(def +bricks-per-line+ 10)
+(def W 240)
+(def H 136)
+(def ZOOM 4)
+(def SCREEN_W (* W ZOOM))
+(def SCREEN_H (* H ZOOM))
+(def PLAYER_MAX_LIFE 5)
+(def LINES_OF_BRICKS 5)
+(def BRICKS_PER_LINE 10)
+(def BRICK_W 20)
+(def BRICK_H 5)
+(def BRICK_GAP (/ (- W (* BRICK_W BRICKS_PER_LINE)) (+ 1 BRICKS_PER_LINE)))
+(def TITLE_FONT_SIZE 16)
+(def FONT_SIZE 8)
 
 (var FRAME 0)
 (var GAMEOVER? false)
@@ -38,6 +46,8 @@
 
 (use jaylib)
 (import spork/netrepl)
+
+(def CAMERA (camera-2d :zoom ZOOM))
 
 # ECS
 
@@ -117,22 +127,22 @@
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
   (draw-rectangle x y w h LIME)
   (for i 0 life
-    (draw-rectangle (+ 20 (* 40 i)) (- H 30) 35 10 CHARCOAL)))
+    (draw-rectangle (+ 5 (* 10 i)) (- H 8) 8 2 CHARCOAL)))
 
 (defn player/update [self]
   (when (key-down? :left)
-    (update-in self [:pos 0] - 5))
+    (update-in self [:pos 0] - 2))
   (when (neg? (get-in self [:pos 0]))
     (put-in self [:pos 0] 0))
   (when (key-down? :right)
-    (update-in self [:pos 0] + 5))
+    (update-in self [:pos 0] + 2))
   (when (<= W (+ (get-in self [:pos 0]) (get-in self [:size 0])))
     (put-in self [:pos 0] (- W (get-in self [:size 0])))))
 
 (defn player/init []
   {:pos @[(- (div W 2) (div W 20)) (div (* H 7) 8)]
-   :size @[(div W 10) 20]
-   :life +player-max-life+
+   :size @[24 4]
+   :life PLAYER_MAX_LIFE
    :draw player/draw
    :update player/update})
 
@@ -145,7 +155,7 @@
     (when (key-pressed? :space)
       (set (self :active) true)
       (put-in self [:v 0] 0)
-      (put-in self [:v 1] -5)))
+      (put-in self [:v 1] -2)))
 
   # ball movement
   (if (self :active)
@@ -154,7 +164,7 @@
       (update-in self [:pos 1] + (get-in self [:v 1])))
     (do
       (put-in self [:pos 0] (+ (get-in PLAYER [:pos 0]) (div (get-in PLAYER [:size 0]) 2)))
-      (put-in self [:pos 1] (- (div (* H 7) 8) 30))))
+      (put-in self [:pos 1] (- (div (* H 7) 8) 10))))
 
   # collision: ball vs walls
   (let [{:pos [x y] :r r :v [vx vy]} self]
@@ -185,7 +195,7 @@
 (defn ball/init []
   {:pos @[(div W 2) (- (div (* H 7) 8) 30)]
    :v @[0 0]
-   :r 7
+   :r 3
    :active false
    :draw ball/draw
    :update ball/update})
@@ -195,6 +205,7 @@
     (draw-rectangle x y w h color)))
 
 (defn brick/break [self]
+  (particle-system/dust-clout-at (BALL :pos))
   (set (self :hidden) true))
 
 (defn- noop [& args] nil)
@@ -208,13 +219,12 @@
   (merge-into BALL (ball/init))
   (array/push ENTITIES BALL)
 
-  (def brick-w (div (get-screen-width) +bricks-per-line+))
-  (def brick-h 40)
-  (def initial-down-position 50)
-  (for i 0 +lines-of-bricks+
-    (for j 0 +bricks-per-line+
-      (def brick @{:pos [(* j brick-w) (+ (* i brick-h) initial-down-position)]
-                   :size [brick-w brick-h]
+  (def initial-down-position 10)
+  (for i 0 LINES_OF_BRICKS
+    (for j 0 BRICKS_PER_LINE
+      (def brick @{:pos [(+ (math/round (* (inc j) BRICK_GAP)) (* j BRICK_W))
+                         (+ (* i BRICK_H) (* i 2) initial-down-position)]
+                   :size [BRICK_W BRICK_H]
                    :color (if (zero? (% (+ j i) 2))
                             YELLOW
                             ORANGE)
@@ -250,6 +260,7 @@
   (begin-drawing)
 
   (clear-background BLACK)
+  (begin-mode-2d CAMERA)
 
   (when (not GAMEOVER?)
     (system/draw PARTICLES)
@@ -258,21 +269,25 @@
     (when PAUSED?
       (draw-text "GAME PAUSED"
                  (- (div W 2)
-                    (div (measure-text "GAME PAUSED" 40) 2))
-                 (- (div H 2) 40)
-                 40 ORANGE)))
+                    (div (measure-text "GAME PAUSED" FONT_SIZE) 2))
+                 (- (div H 2) FONT_SIZE)
+                 FONT_SIZE ORANGE)))
 
   (when GAMEOVER?
     (draw-text "PRESS [ENTER] TO PLAY AGIAN"
                (- (div W 2)
-                  (div (measure-text "PRESS [ENTER] TO PLAY AGIAN" 20) 2))
+                  (div (measure-text "PRESS [ENTER] TO PLAY AGIAN" FONT_SIZE) 2))
                (- (div H 2) 50)
-               20 YELLOW))
+               FONT_SIZE YELLOW))
 
+  (when DEV?
+    (draw-fps 10 10))
+
+  (end-mode-2d)
   (end-drawing))
 
 (defn start []
-  (init-window W H "game")
+  (init-window SCREEN_W SCREEN_H "game")
   (game/init)
   (set-target-fps 60)
 
