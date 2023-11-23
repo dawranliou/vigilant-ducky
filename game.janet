@@ -1,6 +1,3 @@
-(import spork/netrepl)
-(use jaylib)
-
 (def PI math/pi)
 
 (def W 800)
@@ -9,9 +6,20 @@
 (def +lines-of-bricks+ 5)
 (def +bricks-per-line+ 10)
 
-(var TICK 0)
+(var FRAME 0)
 (var GAMEOVER? false)
 (var PAUSED? false)
+
+(def ENTITIES @[])
+(def PARTICLES @[])
+
+(def PLAYER @{})
+(def BALL @{})
+
+(import spork/netrepl)
+(use jaylib)
+
+# ECS
 
 (defn- has-all-keys? [ds keys]
   (all |(has-key? ds $) keys))
@@ -25,9 +33,6 @@
 
 (defn system/all [entities components pred]
   (all pred (filter |(has-all-keys? $ components) entities)))
-
-
-(def ENTITIES @[])
 
 (defn system/draw [&opt entities]
   (default entities ENTITIES)
@@ -63,7 +68,7 @@
     (update-in self [:vel 1] * friction)
     (when (< tick 5)
       (update self :r / 1.1)
-      (when (and (zero? (% TICK 10)) (pos? (length colors)))
+      (when (and (zero? (% FRAME 10)) (pos? (length colors)))
         (array/pop (self :colors))))
     (update self :tick + -1 (math/random)))
 
@@ -87,11 +92,6 @@
 (defn particle-system/dust-clout-at [point &opt count]
   (for i 0 (default count 8)
     (array/push PARTICLES (particle/init point))))
-
-(def PLAYER @{})
-(def BALL @{})
-
-(defn- noop [& args] nil)
 
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
   (draw-rectangle x y w h :black)
@@ -176,6 +176,8 @@
 (defn brick/break [self]
   (set (self :hidden) true))
 
+(defn- noop [& args] nil)
+
 (defn game/init []
   (array/clear ENTITIES)
 
@@ -257,7 +259,7 @@
     (ev/sleep 0)
     (game/update)
     (game/draw)
-    (++ TICK))
+    (++ FRAME))
 
   (close-window))
 
