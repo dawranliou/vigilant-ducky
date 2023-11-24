@@ -77,7 +77,7 @@
   (system/do entities [:break]
              (fn [e]
                (when (and (not (e :hidden))
-                          (check-collision-circle-rec (ball :pos) (ball :r)
+                          (check-collision-circle-rec (ball :pos) (ball :radius)
                                                       [;(e :pos) ;(e :size)]))
                  (:break e)))))
 
@@ -90,39 +90,39 @@
 
 # Particle system
 
-(defn particle/update [self]
+(defn dust-particle/update [self]
   (var final-update? false)
-  (let [{:friction friction :r r :vel [vx vy] :tick tick :colors colors} self]
+  (let [{:friction friction :radius r :vel [vx vy] :tick tick :colors colors} self]
     (update-in self [:pos 0] + vx)
     (update-in self [:pos 1] + vy)
     (update-in self [:vel 0] * friction)
     (update-in self [:vel 1] * friction)
     (when (< tick 5)
-      (/= (self :r) 1.1)
+      (/= (self :radius) 1.1)
       (when (and (zero? (% FRAME 10)) (< 1 (length colors)))
         (array/pop (self :colors))))
     (update self :tick + -1 (math/random)))
 
-  (when (< (self :r) 1)
+  (when (< (self :radius) 1)
     (set (self :remove) true)))
 
-(defn particle/draw [{:pos pos :r r :colors colors}]
+(defn dust-particle/draw [{:pos pos :radius r :colors colors}]
   (draw-circle-v pos r (array/peek colors)))
 
-(defn particle/init [pos]
+(defn dust-particle/init [pos]
   (def angle (+ (* (math/random) PI) PI))
   @{:pos @[;pos]
-    :r (* (math/random) 3)
+    :radius (* (math/random) 3)
     :friction 0.92
     :tick 20
     :vel @[(math/cos angle) (math/sin angle)]
     :colors @[SKIN PINK HEATHER BLUE] # @[0x333C57FF 0x566C86FF 0x94B0C2FF 0xF4F4F4FF]
-    :update particle/update
-    :draw particle/draw})
+    :update dust-particle/update
+    :draw dust-particle/draw})
 
 (defn particle-system/dust-clout-at [point &opt count]
   (for i 0 (default count 8)
-    (array/push PARTICLES (particle/init point))))
+    (array/push PARTICLES (dust-particle/init point))))
 
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
   (draw-rectangle x y w h LIME)
@@ -146,7 +146,7 @@
    :draw player/draw
    :update player/update})
 
-(defn ball/draw [{:pos pos :r r}]
+(defn ball/draw [{:pos pos :radius r}]
   (draw-circle-v pos r BLUE))
 
 (defn ball/update [self]
@@ -154,39 +154,39 @@
   (when (not (self :active))
     (when (key-pressed? :space)
       (set (self :active) true)
-      (put-in self [:v 0] 0)
-      (put-in self [:v 1] -2)))
+      (put-in self [:vel 0] 0)
+      (put-in self [:vel 1] -2)))
 
   # ball movement
   (if (self :active)
     (do
-      (update-in self [:pos 0] + (get-in self [:v 0]))
-      (update-in self [:pos 1] + (get-in self [:v 1])))
+      (update-in self [:pos 0] + (get-in self [:vel 0]))
+      (update-in self [:pos 1] + (get-in self [:vel 1])))
     (do
       (put-in self [:pos 0] (+ (get-in PLAYER [:pos 0]) (div (get-in PLAYER [:size 0]) 2)))
       (put-in self [:pos 1] (- (div (* H 7) 8) 10))))
 
   # collision: ball vs walls
-  (let [{:pos [x y] :r r :v [vx vy]} self]
+  (let [{:pos [x y] :radius r :vel [vx vy]} self]
     (when (or (<= W (+ x r))
               (<= (- x r) 0))
-      (update-in self [:v 0] * -1))
+      (update-in self [:vel 0] * -1))
     (when (<= (- y r) 0)
-      (update-in self [:v 1] * -1))
+      (update-in self [:vel 1] * -1))
     (when (<= H (+ y r))
-      (put-in self [:v 0] 0)
-      (put-in self [:v 1] 0)
+      (put-in self [:vel 0] 0)
+      (put-in self [:vel 1] 0)
       (set (self :active) false)
       (update PLAYER :life + -1)))
 
   # collision: ball vs player
   (let [{:pos [x y] :size [w h]} PLAYER
-        {:pos [bx by] :r br :v [bvx bvy]} self]
+        {:pos [bx by] :radius br :vel [bvx bvy]} self]
     (when (check-collision-circle-rec [bx by] br [x y w h])
       (particle-system/dust-clout-at [bx by])
       (when (pos? bvy)
-        (update-in self [:v 1] * -1)
-        (put-in self [:v 0] (div (* (- bx x (div w 2)) 5) (div w 2))))))
+        (update-in self [:vel 1] * -1)
+        (put-in self [:vel 0] (div (* (- bx x (div w 2)) 5) (div w 2))))))
 
   # collision: ball vs bricks
   (system/collide BALL)
@@ -194,8 +194,8 @@
 
 (defn ball/init []
   {:pos @[(div W 2) (- (div (* H 7) 8) 30)]
-   :v @[0 0]
-   :r 3
+   :vel @[0 0]
+   :radius 3
    :active false
    :draw ball/draw
    :update ball/update})
