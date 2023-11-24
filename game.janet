@@ -74,12 +74,29 @@
 
 (defn system/collide [ball &opt entities]
   (default entities ENTITIES)
+  (var collided-x? false)
+  (var collided-y? false)
   (system/do entities [:break]
              (fn [e]
                (when (and (not (e :hidden))
                           (check-collision-circle-rec (ball :pos) (ball :radius)
                                                       [;(e :pos) ;(e :size)]))
-                 (:break e)))))
+                 (let [{:pos [x y] :radius r} ball
+                       {:pos [ex ey] :size [ew eh]} e]
+                   # Collide horizonally
+                   (when (or (< ex (+ x r) (+ ex ew))
+                             (< ex (- x r) (+ ex ew)))
+                     (set collided-x? true))
+                   # Collide vertically
+                   (when (or (< ey (+ y r) (+ ey eh))
+                             (< ey (- y r) (+ ey eh)))
+                     (set collided-y? true)))
+
+                 (:break e))))
+  (when collided-x?
+    (update-in ball [:vel 0] * -0.95))
+  (when collided-y?
+    (update-in ball [:vel 1] * -0.95)))
 
 (defn system/gc [&opt entities]
   (default entities ENTITIES)
