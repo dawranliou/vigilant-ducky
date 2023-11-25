@@ -176,7 +176,7 @@
     (when (key-pressed? :space)
       (set (self :active) true)
       (put-in self [:vel 0] 0)
-      (put-in self [:vel 1] -2)))
+      (put-in self [:vel 1] -1)))
 
   # ball movement
   (if (self :active)
