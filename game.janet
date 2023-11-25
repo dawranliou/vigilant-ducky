@@ -207,7 +207,8 @@
       (particle-system/dust-clout-at [bx by])
       (when (pos? bvy)
         (update-in self [:vel 1] * -1)
-        (put-in self [:vel 0] (div (* (- bx x (div w 2)) 5) (div w 2))))))
+        (put-in self [:vel 0] (div (* (- bx x (div w 2)) 5 0.9)
+                                   (div w 2))))))
 
   # collision: ball vs bricks
   (system/collide BALL)
