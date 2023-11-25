@@ -82,16 +82,16 @@
                (when (and (not (e :hidden))
                           (check-collision-circle-rec (ball :pos) (ball :radius)
                                                       [;(e :pos) ;(e :size)]))
-                 (let [{:pos [x y] :radius r} ball
-                       {:pos [ex ey] :size [ew eh]} e]
-                   # Collide horizonally
-                   (when (or (< ex (+ x r) (+ ex ew))
-                             (< ex (- x r) (+ ex ew)))
-                     (set collided-x? true))
-                   # Collide vertically
-                   (when (or (< ey (+ y r) (+ ey eh))
-                             (< ey (- y r) (+ ey eh)))
-                     (set collided-y? true)))
+                 # (let [{:pos [x y] :radius r} ball
+                 #       {:pos [ex ey] :size [ew eh]} e]
+                 #   # Collide horizonally
+                 #   (when (or (< ex (+ x r) (+ ex ew))
+                 #             (< ex (- x r) (+ ex ew)))
+                 #     (set collided-y? true))
+                 #   # Collide vertically
+                 #   (when (or (< ey (+ y r) (+ ey eh))
+                 #             (< ey (- y r) (+ ey eh)))
+                 #     (set collided-x? true)))
 
                  (:break e))))
   (when collided-x?
