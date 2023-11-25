@@ -43,6 +43,7 @@
 (def BALL @{})
 
 (def DEV? true)
+(def RNG (math/rng (os/time)))
 
 (use jaylib)
 (import spork/netrepl)
@@ -118,22 +119,25 @@
       (/= (self :radius) 1.1)
       (when (and (zero? (% FRAME 10)) (< 1 (length colors)))
         (array/pop (self :colors))))
-    (update self :tick + -1 (math/random)))
+    (update self :tick + -1 (math/rng-uniform RNG)))
 
   (when (< (self :radius) 1)
     (set (self :remove) true)))
 
-(defn dust-particle/draw [{:pos pos :radius r :colors colors}]
-  (draw-circle-v pos r (array/peek colors)))
+(defn dust-particle/draw [{:pos pos :radius r :colors colors :type type}]
+  (match type
+    0 (draw-circle-v pos r (array/peek colors))
+    1 (draw-circle-lines ;(map math/round pos) r (array/peek colors))))
 
 (defn dust-particle/init [pos]
-  (def angle (+ (* (math/random) PI) PI))
+  (def angle (+ (* (math/rng-uniform RNG) PI) PI))
   @{:pos @[;pos]
-    :radius (* (math/random) 3)
+    :radius (* (math/rng-uniform RNG) 3)
     :friction 0.92
+    :type (math/rng-int RNG 2)
     :tick 20
     :vel @[(math/cos angle) (math/sin angle)]
-    :colors @[SKIN PINK HEATHER BLUE] # @[0x333C57FF 0x566C86FF 0x94B0C2FF 0xF4F4F4FF]
+    :colors @[SKIN HEATHER PINK] # @[0x333C57FF 0x566C86FF 0x94B0C2FF 0xF4F4F4FF]
     :update dust-particle/update
     :draw dust-particle/draw})
 
