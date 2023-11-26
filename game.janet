@@ -146,9 +146,9 @@
     (array/push PARTICLES (dust-particle/init point))))
 
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
-  (draw-rectangle x y w h LIME)
+  (draw-rectangle-rounded [x y w h] 1 0 LIME)
   (for i 0 life
-    (draw-rectangle (+ 5 (* 10 i)) (- H 8) 8 2 CHARCOAL)))
+    (draw-rectangle-rounded [(+ 5 (* 10 i)) (- H 8) 8 2] 1 0 CHARCOAL)))
 
 (defn player/update [self]
   (when (key-down? :left)
@@ -226,7 +226,7 @@
 
 (defn brick/draw [{:pos [x y] :size [w h] :color color :hidden hidden}]
   (when (not hidden)
-    (draw-rectangle x y w h color)))
+    (draw-rectangle-rounded [x y w h] 1.0 0 color)))
 
 (defn brick/break [self]
   (particle-system/dust-clout-at (BALL :pos))
