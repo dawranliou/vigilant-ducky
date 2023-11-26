@@ -301,6 +301,7 @@
                FONT_SIZE YELLOW)))
 
 (defn start []
+  (set-trace-log-level :none)
   (init-window SCREEN_W SCREEN_H "game")
   (def canvas (load-render-texture W H))
   (set-texture-filter (get-render-texture-texture2d canvas) :point)
