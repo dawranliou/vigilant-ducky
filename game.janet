@@ -48,7 +48,7 @@
 (use jaylib)
 (import spork/netrepl)
 
-(def CAMERA (camera-2d :zoom ZOOM))
+(def CAMERA (camera-2d :zoom 1))
 
 # ECS
 
@@ -279,11 +279,7 @@
       (game/over?))))
 
 (defn game/draw []
-  (begin-drawing)
-
   (clear-background BLACK)
-  (begin-mode-2d CAMERA)
-
   (when (not GAMEOVER?)
     (system/draw PARTICLES)
     (system/draw)
@@ -300,25 +296,36 @@
                (- (div W 2)
                   (div (measure-text "PRESS [ENTER] TO PLAY AGIAN" FONT_SIZE) 2))
                (- (div H 2) 50)
-               FONT_SIZE YELLOW))
-
-  (when DEV?
-    (draw-fps 10 10))
-
-  (end-mode-2d)
-  (end-drawing))
+               FONT_SIZE YELLOW)))
 
 (defn start []
   (init-window SCREEN_W SCREEN_H "game")
+  (def canvas (load-render-texture W H))
+  (set-texture-filter (get-render-texture-texture2d canvas) :point)
   (game/init)
   (set-target-fps 60)
 
   (while (not (window-should-close))
     (ev/sleep 0)
     (game/update)
+    (begin-texture-mode canvas)
     (game/draw)
+    (end-texture-mode)
+    (begin-drawing)
+    (clear-background BLACK)
+    (begin-mode-2d CAMERA)
+    (draw-texture-pro (get-render-texture-texture2d canvas)
+                      [0 0 W (* -1 H)]
+                      [0 0 SCREEN_W SCREEN_H]
+                      [0 0] 0 :white)
+    (when DEV?
+      (draw-fps 10 10))
+    (end-mode-2d)
+    (end-drawing)
+
     (++ FRAME))
 
+  (unload-render-texture canvas)
   (close-window))
 
 # (def game (ev/call start))
