@@ -191,8 +191,10 @@
   (let [{:pos [x y] :radius r :vel [vx vy]} self]
     (when (or (<= W (+ x r))
               (<= (- x r) 0))
+      (particle-system/dust-clout-at [x y])
       (update-in self [:vel 0] * -1))
     (when (<= (- y r) 0)
+      (particle-system/dust-clout-at [x y])
       (update-in self [:vel 1] * -1))
     (when (<= H (+ y r))
       (put-in self [:vel 0] 0)
