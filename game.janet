@@ -49,6 +49,7 @@
 (import spork/netrepl)
 
 (def CAMERA (camera-2d :zoom 1))
+(def SHAKER @{:amplitude 0 :duration 0})
 
 # ECS
 
@@ -145,6 +146,24 @@
   (for i 0 (default count 8)
     (array/push PARTICLES (dust-particle/init point))))
 
+# Screen shaker
+(defn shaker/start [amplitude duration]
+  (set (SHAKER :amplitude) amplitude)
+  (set (SHAKER :duration) duration))
+
+(defn shaker/update []
+  (let [{:duration dur :amplitude amp} SHAKER
+        x-offset (math/round (- (math/rng-int RNG amp)
+                                (/ amp 2)))
+        y-offset (math/round (- (math/rng-int RNG amp)
+                                (/ amp 2)))]
+    (when (pos? dur)
+      (set (CAMERA :offset) [x-offset y-offset])
+      (-- (SHAKER :duration)))
+
+    (when (zero? dur)
+      (set (CAMERA :offset) [0 0]))))
+
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
   (draw-rectangle-rounded [x y w h] 1 0 LIME)
   (for i 0 life
@@ -191,9 +210,11 @@
   (let [{:pos [x y] :radius r :vel [vx vy]} self]
     (when (or (<= W (+ x r))
               (<= (- x r) 0))
+      (shaker/start 4 10)
       (particle-system/dust-clout-at [x y])
       (update-in self [:vel 0] * -1))
     (when (<= (- y r) 0)
+      (shaker/start 4 10)
       (particle-system/dust-clout-at [x y])
       (update-in self [:vel 1] * -1))
     (when (<= H (+ y r))
@@ -206,6 +227,7 @@
   (let [{:pos [x y] :size [w h]} PLAYER
         {:pos [bx by] :radius br :vel [bvx bvy]} self]
     (when (check-collision-circle-rec [bx by] br [x y w h])
+      (shaker/start 4 10)
       (particle-system/dust-clout-at [bx by])
       (when (pos? bvy)
         (update-in self [:vel 1] * -1)
@@ -229,6 +251,7 @@
     (draw-rectangle-rounded [x y w h] 1.0 0 color)))
 
 (defn brick/break [self]
+  (shaker/start 4 10)
   (particle-system/dust-clout-at (BALL :pos))
   (set (self :hidden) true))
 
@@ -265,6 +288,8 @@
     nil))
 
 (defn game/update []
+  (shaker/update)
+
   (when GAMEOVER?
     (when (key-pressed? :enter)
       (game/init)
