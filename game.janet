@@ -51,6 +51,7 @@
 (def CAMERA (camera-2d :zoom 1))
 (def SHAKER @{:amplitude 0 :duration 0})
 
+
 # ECS
 
 (defn- has-all-keys? [ds keys]
@@ -107,6 +108,7 @@
     (when (e :remove)
       (array/remove entities i))))
 
+
 # Particle system
 
 (defn dust-particle/update [self]
@@ -146,7 +148,9 @@
   (for i 0 (default count 8)
     (array/push PARTICLES (dust-particle/init point))))
 
+
 # Screen shaker
+
 (defn shaker/start [amplitude duration]
   (set (SHAKER :amplitude) amplitude)
   (set (SHAKER :duration) duration))
@@ -163,6 +167,9 @@
 
     (when (zero? dur)
       (set (CAMERA :offset) [0 0]))))
+
+
+# Player
 
 (defn player/draw [{:pos [x y] :size [w h] :life life}]
   (draw-rectangle-rounded [x y w h] 1 0 LIME)
@@ -185,6 +192,10 @@
    :life PLAYER_MAX_LIFE
    :draw player/draw
    :update player/update})
+
+
+
+# Ball
 
 (defn ball/draw [{:pos pos :radius r}]
   (draw-circle-v pos r BLUE))
@@ -246,6 +257,9 @@
    :draw ball/draw
    :update ball/update})
 
+
+#Brick
+
 (defn brick/draw [{:pos [x y] :size [w h] :color color :hidden hidden}]
   (when (not hidden)
     (draw-rectangle-rounded [x y w h] 1.0 0 color)))
@@ -256,6 +270,9 @@
   (set (self :hidden) true))
 
 (defn- noop [& args] nil)
+
+
+# Game
 
 (defn game/init []
   (array/clear ENTITIES)
