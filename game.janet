@@ -52,6 +52,14 @@
 
 (defn- noop [& args] nil)
 
+(defn linear [s] s)
+(defn quad [s] (* s s))
+(defn cubic [s] (* s s s))
+
+(defn lerp [t a b &opt func]
+  (default func linear)
+  (+ a (* (- b a) (func t))))
+
 
 # ECS
 
@@ -169,7 +177,8 @@
     (when (zero? dur)
       (set (CAMERA :offset) [0 0]))))
 
-# Timer
+
+# Timer (adapted from https://github.com/vrld/hump/blob/master/timer.lua)
 (def TIMERS @[])
 
 (defn timer/update [dt]
@@ -177,7 +186,7 @@
          :let [{:during during :after after :limit limit} timer]]
     (set (timer :time) (+ (timer :time) dt))
     (when during
-      (during dt (max (- limit (timer :time)) 0)))
+      (during dt (min (/ (timer :time) limit) 1.0)))
     (when (and (<= (timer :limit) (timer :time))
                (pos? (timer :count)))
       (after)
@@ -203,6 +212,16 @@
                 :during noop :after after}]
     (array/push TIMERS timer)
     timer))
+
+(defn timer/tween [duration subject path target &opt method after]
+  (default method linear)
+  (default after noop)
+  (def initial-value (get-in subject path))
+  (timer/during duration
+                (fn [dt t]
+                  (put-in subject path
+                          (math/floor
+                            (lerp t initial-value target method))))))
 
 
 # Player
