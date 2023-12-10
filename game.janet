@@ -174,23 +174,20 @@
 
 (defn timer/update [dt]
   (loop [timer :in TIMERS
-         :let [{:during during :after after :limit limit
-                :canceled? canceled?}
-               timer]
-         :when (not canceled?)]
+         :let [{:during during :after after :limit limit} timer]]
     (set (timer :time) (+ (timer :time) dt))
     (when during
       (during dt (max (- limit (timer :time)) 0)))
     (when (<= (timer :limit) (timer :time))
       (after)
-      (set (timer :canceled?) true)))
+      (-- (timer :count))))
   (loop [idx :down-to [(dec (length TIMERS)) 0]
          :let [timer (get TIMERS idx)]]
-    (when (timer :canceled?)
+    (when (zero? (timer :count))
       (array/remove TIMERS idx))))
 
 (defn timer/during [delay during &opt after]
-  (let [timer @{:time 0 :canceled? false :limit delay
+  (let [timer @{:time 0 :count 1 :limit delay
                 :during during :after (or after noop)}]
     (array/push TIMERS timer)
     timer))
