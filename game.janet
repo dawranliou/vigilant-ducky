@@ -50,6 +50,8 @@
 (def CAMERA (camera-2d :zoom 1))
 (def SHAKER @{:amplitude 0 :duration 0})
 
+(defn- noop [& args] nil)
+
 
 # ECS
 
@@ -167,6 +169,36 @@
     (when (zero? dur)
       (set (CAMERA :offset) [0 0]))))
 
+# Timer
+(def TIMERS @[])
+
+(defn timer/update [dt]
+  (loop [timer :in TIMERS
+         :let [{:during during :after after :limit limit
+                :canceled? canceled?}
+               timer]
+         :when (not canceled?)]
+    (set (timer :time) (+ (timer :time) dt))
+    (when during
+      (during dt (max (- limit (timer :time)) 0)))
+    (when (<= (timer :limit) (timer :time))
+      (after)
+      (set (timer :canceled?) true)))
+  (loop [idx :down-to [(dec (length TIMERS)) 0]
+         :let [timer (get TIMERS idx)]]
+    (when (timer :canceled?)
+      (array/remove TIMERS idx))))
+
+(defn timer/during [delay during &opt after]
+  (let [timer @{:time 0 :canceled? false :limit delay
+                :during during :after (or after noop)}]
+    (array/push TIMERS timer)
+    timer))
+
+(defn timer/after [delay func]
+  (timer/during delay noop func))
+
+
 
 # Player
 
@@ -268,12 +300,12 @@
   (particle-system/dust-clout-at (BALL :pos))
   (set (self :hidden) true))
 
-(defn- noop [& args] nil)
 
 
 # Game
 
 (defn game/init []
+  (array/clear TIMERS)
   (array/clear ENTITIES)
 
   (merge-into PLAYER (player/init))
@@ -304,6 +336,7 @@
     nil))
 
 (defn game/update [dt]
+  (timer/update dt)
   (shaker/update dt)
 
   (when GAMEOVER?
