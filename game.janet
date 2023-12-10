@@ -178,8 +178,10 @@
     (set (timer :time) (+ (timer :time) dt))
     (when during
       (during dt (max (- limit (timer :time)) 0)))
-    (when (<= (timer :limit) (timer :time))
+    (when (and (<= (timer :limit) (timer :time))
+               (pos? (timer :count)))
       (after)
+      (update timer :time - (timer :limit))
       (-- (timer :count))))
   (loop [idx :down-to [(dec (length TIMERS)) 0]
          :let [timer (get TIMERS idx)]]
@@ -195,6 +197,12 @@
 (defn timer/after [delay func]
   (timer/during delay noop func))
 
+(defn timer/every [delay after &opt count]
+  (default count math/inf)
+  (let [timer @{:time 0 :limit delay :count count
+                :during noop :after after}]
+    (array/push TIMERS timer)
+    timer))
 
 
 # Player
