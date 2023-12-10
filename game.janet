@@ -46,7 +46,6 @@
 (def RNG (math/rng (os/time)))
 
 (use jaylib)
-(import spork/netrepl)
 
 (def CAMERA (camera-2d :zoom 1))
 (def SHAKER @{:amplitude 0 :duration 0})
@@ -377,9 +376,7 @@
 # (start)
 
 (defn main [&]
-  (if DEV?
-    (netrepl/server-single "127.0.0.1" "9365" (fiber/getenv (fiber/current)))
-    (start)))
+  (start))
 
 (def dialog
   ``
