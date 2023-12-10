@@ -120,6 +120,34 @@
 
 # Particle system
 
+(defn pixel-particle/update [self dt]
+  (-- (self :tick))
+  (cond
+    (neg? (self :tick)) (set (self :remove) true)
+    (< (self :tick) 10) (set (self :color) (self :color-old))))
+
+(defn pixel-particle/draw [{:pos pos :color color}]
+  (draw-pixel ;pos color))
+
+(defn pixel-particle/init [pos age]
+  @{:pos @[;pos]
+    :tick age
+    :color PINK
+    :color-old SKIN
+    :update pixel-particle/update
+    :draw pixel-particle/draw})
+
+(defn pixel-particle/add [pos age]
+  (array/push PARTICLES (pixel-particle/init pos age)))
+
+(defn spawn-trail [[x y]]
+  (let [ang (* 2 PI (math/rng-uniform RNG))
+        ox (* (math/sin ang) (BALL :radius) 0.2)
+        oy (* (math/cos ang) (BALL :radius) 0.2)]
+    (pixel-particle/add [(math/floor (+ x ox))
+                         (math/floor (+ y oy))]
+                        (+ 15 (math/rng-int RNG 15)))))
+
 (defn dust-particle/update [self dt]
   (var final-update? false)
   (let [{:friction friction :radius r :vel [vx vy] :tick tick :colors colors} self]
@@ -266,6 +294,7 @@
   # ball movement
   (if (self :active)
     (do
+      (spawn-trail (self :pos))
       (update-in self [:pos 0] + (get-in self [:vel 0]))
       (update-in self [:pos 1] + (get-in self [:vel 1])))
     (do
