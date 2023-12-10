@@ -70,9 +70,9 @@
   (default entities ENTITIES)
   (system/do entities [:draw] :draw))
 
-(defn system/update [&opt entities]
+(defn system/update [dt &opt entities]
   (default entities ENTITIES)
-  (system/do entities [:update] :update))
+  (system/do entities [:update] |(:update $ dt)))
 
 (defn system/collide [ball &opt entities]
   (default entities ENTITIES)
@@ -110,7 +110,7 @@
 
 # Particle system
 
-(defn dust-particle/update [self]
+(defn dust-particle/update [self dt]
   (var final-update? false)
   (let [{:friction friction :radius r :vel [vx vy] :tick tick :colors colors} self]
     (update-in self [:pos 0] + vx)
@@ -154,7 +154,7 @@
   (set (SHAKER :amplitude) amplitude)
   (set (SHAKER :duration) duration))
 
-(defn shaker/update []
+(defn shaker/update [dt]
   (let [{:duration dur :amplitude amp} SHAKER
         x-offset (math/round (- (math/rng-int RNG amp)
                                 (/ amp 2)))
@@ -175,7 +175,7 @@
   (for i 0 life
     (draw-rectangle-rounded [(+ 5 (* 10 i)) (- H 8) 8 2] 1 0 CHARCOAL)))
 
-(defn player/update [self]
+(defn player/update [self dt]
   (when (key-down? :left)
     (update-in self [:pos 0] - 2))
   (when (neg? (get-in self [:pos 0]))
@@ -199,7 +199,7 @@
 (defn ball/draw [{:pos pos :radius r}]
   (draw-circle-v pos r BLUE))
 
-(defn ball/update [self]
+(defn ball/update [self dt]
   # ball launching
   (when (not (self :active))
     (when (key-pressed? :space)
@@ -303,8 +303,8 @@
     (system/all ENTITIES [:break] |($ :hidden)) (set GAMEOVER? true)
     nil))
 
-(defn game/update []
-  (shaker/update)
+(defn game/update [dt]
+  (shaker/update dt)
 
   (when GAMEOVER?
     (when (key-pressed? :enter)
@@ -316,8 +316,8 @@
       (set PAUSED? (not PAUSED?)))
 
     (when (not PAUSED?)
-      (system/update)
-      (system/update PARTICLES)
+      (system/update dt)
+      (system/update dt PARTICLES)
       (system/gc PARTICLES)
       (game/over?))))
 
@@ -351,7 +351,7 @@
 
   (while (not (window-should-close))
     (ev/sleep 0)
-    (game/update)
+    (game/update (get-frame-time))
     (begin-texture-mode canvas)
     (game/draw)
     (end-texture-mode)
