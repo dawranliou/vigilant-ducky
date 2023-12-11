@@ -124,29 +124,43 @@
   (-- (self :tick))
   (cond
     (neg? (self :tick)) (set (self :remove) true)
-    (< (self :tick) 10) (set (self :color) (self :color-old))))
+    (< (self :tick) 10) (set (self :color) (self :color-old)))
+  (when (self :fall?)
+    (update-in self [:vel 1] + 0.1))
+  (update-in self [:pos 0] + (get-in self [:vel 0]))
+  (update-in self [:pos 1] + (get-in self [:vel 1])))
 
 (defn pixel-particle/draw [{:pos pos :color color}]
-  (draw-pixel ;pos color))
+  (draw-pixel ;(map math/floor pos) color))
 
-(defn pixel-particle/init [pos age]
+(defn pixel-particle/init [pos vel age &opt fall?]
   @{:pos @[;pos]
+    :vel @[;vel]
+    :fall? fall?
     :tick age
     :color PINK
     :color-old SKIN
     :update pixel-particle/update
     :draw pixel-particle/draw})
 
-(defn pixel-particle/add [pos age]
-  (array/push PARTICLES (pixel-particle/init pos age)))
+(defn pixel-particle/add [pos vel age &opt fall?]
+  (array/push PARTICLES (pixel-particle/init pos vel age fall?)))
 
 (defn spawn-trail [[x y]]
   (let [ang (* 2 PI (math/rng-uniform RNG))
-        ox (* (math/sin ang) (BALL :radius) 0.2)
-        oy (* (math/cos ang) (BALL :radius) 0.2)]
+        ox (* (math/cos ang) (BALL :radius) 0.2)
+        oy (* (math/sin ang) (BALL :radius) 0.2)]
     (pixel-particle/add [(math/floor (+ x ox))
                          (math/floor (+ y oy))]
+                        [0 0]
                         (+ 15 (math/rng-int RNG 15)))))
+
+(defn shatter-at [pos]
+  (for i 0 10
+    (let [ang (* 2 PI (math/rng-uniform RNG))
+          dx (* (math/cos ang) 1)
+          dy (* (math/sin ang) 1)]
+      (pixel-particle/add pos [dx dy] 60 true))))
 
 (defn dust-particle/update [self dt]
   (var final-update? false)
@@ -350,7 +364,7 @@
 
 (defn brick/break [self]
   (shaker/start 4 10)
-  (particle-system/dust-clout-at (BALL :pos))
+  (shatter-at (self :pos))
   (set (self :hidden) true))
 
 
