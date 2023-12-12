@@ -1,9 +1,10 @@
 (declare-project
- :name "example"
- :description "example"
- :dependencies ["https://github.com/janet-lang/jaylib.git"
-               "https://github.com/janet-lang/spork.git"])
+  :name "game"
+  :description "a game"
+  :dependencies ["https://github.com/janet-lang/jaylib.git"
+                 # "https://github.com/janet-lang/spork.git"
+                 ])
 
 (declare-executable
-  :name "example"
-  :entry "example.janet")
+  :name "game"
+  :entry "game.janet")

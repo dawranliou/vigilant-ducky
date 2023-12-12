@@ -42,12 +42,12 @@
 (def PLAYER @{})
 (def BALL @{})
 
-(def DEV? true)
+(def DEV? (truthy? (dyn 'DEV)))
 (def RNG (math/rng (os/time)))
 
 (use jaylib)
 
-(def CAMERA (camera-2d :zoom 1))
+(var CAMERA nil)
 (def SHAKER @{:amplitude 0 :duration 0})
 
 (defn- noop [& args] nil)
@@ -372,6 +372,8 @@
 # Game
 
 (defn game/init []
+  (set CAMERA (camera-2d :zoom 1))
+
   (array/clear TIMERS)
   (array/clear ENTITIES)
 
