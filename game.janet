@@ -474,50 +474,8 @@
   (unload-render-texture canvas)
   (close-window))
 
-# (def game (ev/call start))
-# (start)
-
 (defn main [&]
   (start))
 
-(def dialog
-  ``
-~ Character Name
-| Each 'bar' represents a new panel to display. Newlines are optional but help when writing.
-| (voice 2) The voice number is the sfx id to play on every character.
-| (color 4) The number 4 is red in tic80 (color 12), and 12 is white.
-| (speed 0.1) Speed will change the time between character progression, (speed 1) and can be any positive number.
-| (wiggle true) wiggle will make the text bounce up and down, how fun!
-``
-  )
-
-
-(def script-grammar
-  ~{:bool (+ (* "true" (constant true))
-             (* "false" (constant false)))
-    :pos-int (number (some :d))
-    :pos-float (number (some (+ :d ".")))
-    :command (replace
-               (* "("
-                  (+ (* "voice " (constant :voice) :pos-int)
-                     (* "speed " (constant :speed) :pos-float)
-                     (* "color " (constant :color) :pos-int)
-                     (* "wiggle " (constant :wiggle) :bool))
-                  ")" (any " "))
-               ,struct)
-    :word (replace
-            (* (constant :word)
-               (<- (* (some (+ :w (set "',.?!"))) (any " "))))
-            ,struct)
-    :character-name (replace
-                      (* (constant :name)
-                         (replace (* (<- (some (+ :w " "))))
-                                  ,string/trim) )
-                      ,struct)
-    :source-line (* "~ " :character-name (any :command))
-    :dialogue-line (* "| " (some (choice :command :word)) (constant :wait))
-    :main (* :source-line (some :dialogue-line))})
-
-(peg/match script-grammar "~ Character Name
-| (color 1) hello (wiggle true) world!
-| (speed 0.5) pizza hotdog.")
+# (def game (ev/call start))
+# (start)
