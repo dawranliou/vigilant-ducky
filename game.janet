@@ -231,7 +231,9 @@
       (during dt (min (/ (timer :time) limit) 1.0)))
     (when (and (<= (timer :limit) (timer :time))
                (pos? (timer :count)))
-      (after)
+      (if (fiber? after)
+        (resume after)
+        (after))
       (update timer :time - (timer :limit))
       (-- (timer :count))))
   (loop [idx :down-to [(dec (length TIMERS)) 0]
@@ -254,6 +256,12 @@
                 :during noop :after after}]
     (array/push TIMERS timer)
     timer))
+
+(defn timer/script [func]
+  (let [f (fiber/new func)]
+    (resume f (fn [t]
+                (timer/after t f)
+                (yield)))))
 
 (defn timer/tween [duration subject path target &opt method after]
   (default method linear)
