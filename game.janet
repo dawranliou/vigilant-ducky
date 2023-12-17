@@ -52,9 +52,25 @@
 
 (defn- noop [& args] nil)
 
+(defn out [f]
+  (fn [s & args]
+    (- 1 (f (- 1 s) ;args))))
+
+(defn chain [f1 f2]
+  (fn [s & args]
+    (if (< s 0.5)
+      (f1 (* 2 s) ;args)
+      (+ 1 (f2 (- (* 2 s) 1) ;args)))))
+
 (defn linear [s] s)
 (defn quad [s] (* s s))
 (defn cubic [s] (* s s s))
+(defn elastic [s]
+  (let [amp 1 period 0.3]
+    (* -1 amp
+       (math/sin (- (/ (* 2 math/pi (- s 1)) period)
+                    (math/asin (/ 1 amp))))
+       (math/exp2 (* 10 (- s 1))))))
 
 (defn lerp [t a b &opt func]
   (default func linear)
@@ -394,17 +410,19 @@
   (def initial-down-position 10)
   (for i 0 LINES_OF_BRICKS
     (for j 0 BRICKS_PER_LINE
-      (def brick @{:pos [(+ (math/round (* (inc j) BRICK_GAP)) (* j BRICK_W))
-                         (+ (* i BRICK_H) (* i 2) initial-down-position)]
-                   :size [BRICK_W BRICK_H]
-                   :color (if (zero? (% (+ j i) 2))
-                            YELLOW
-                            ORANGE)
-                   :break brick/break
-                   :hidden false
-                   :draw brick/draw
-                   :update noop})
-      (array/push ENTITIES brick))))
+      (let [target-y (+ (* i BRICK_H) (* i 2) initial-down-position)]
+        (def brick @{:pos @[(+ (math/round (* (inc j) BRICK_GAP)) (* j BRICK_W))
+                           (- 0 (math/rng-int RNG 100))]
+                     :size @[BRICK_W BRICK_H]
+                     :color (if (zero? (% (+ j i) 2))
+                              YELLOW
+                              ORANGE)
+                     :break brick/break
+                     :hidden false
+                     :draw brick/draw
+                     :update noop})
+        (array/push ENTITIES brick)
+        (timer/tween 1 brick [:pos 1] target-y (out elastic))))))
 
 (defn game/over? []
   (cond
