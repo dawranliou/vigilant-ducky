@@ -286,8 +286,41 @@
   (timer/during duration
                 (fn [dt t]
                   (put-in subject path
-                          (math/floor
-                            (lerp t initial-value target method))))))
+                          (lerp t initial-value target method)))))
+
+
+
+# transition
+(def TRANSITION @{:phase nil    # nil, :in, or :out
+                  :percentage 0})
+
+(defn transition/draw []
+  (let [grid-size 16
+        grid-size/2 (div grid-size 2)]
+    (loop [i :range-to [0 (math/ceil (/ H grid-size))]
+           j :range-to [0 (math/ceil (/ W grid-size))]
+           :let [{:percentage p} TRANSITION
+                 angle (lerp p 0 90)
+                 size (lerp p 0 grid-size)
+                 size/2 (div size 2)
+                 rec [(+ grid-size/2 (* j grid-size))
+                      (+ grid-size/2 (* i grid-size))
+                      size size]]]
+      (draw-rectangle-pro rec [size/2 size/2] angle PINK))))
+
+# (do
+#   (set (TRANSITION :phase) :out)
+#   (timer/tween 2 TRANSITION [:percentage] 1))
+# (do
+#   (set (TRANSITION :phase) :in)
+#   (timer/tween 2 TRANSITION [:percentage] 0))
+# (timer/script (fn [wait]
+#                 (set (TRANSITION :phase) :out)
+#                 (timer/tween 2 TRANSITION [:percentage] 1)
+#                 (wait 2)
+#                 (set (TRANSITION :phase) :in)
+#                 (timer/tween 2 TRANSITION [:percentage] 0)
+#                 (wait 2)))
 
 
 # Player
@@ -399,6 +432,10 @@
   (set CAMERA (camera-2d :zoom 1))
 
   (array/clear TIMERS)
+  (merge-into TRANSITION {:phase :in :percentage 1})
+  (timer/tween 1 TRANSITION [:percentage] 0 linear
+               |(set (TRANSITION :phase) nil))
+
   (array/clear ENTITIES)
 
   (merge-into PLAYER (player/init))
@@ -460,7 +497,10 @@
                  (- (div W 2)
                     (div (measure-text "GAME PAUSED" FONT_SIZE) 2))
                  (- (div H 2) FONT_SIZE)
-                 FONT_SIZE ORANGE)))
+                 FONT_SIZE ORANGE))
+
+    (when (not= nil (TRANSITION :phase))
+      (transition/draw)))
 
   (when GAMEOVER?
     (draw-text "PRESS [ENTER] TO PLAY AGIAN"
