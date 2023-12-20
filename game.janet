@@ -428,6 +428,7 @@
 
 # Scene
 (def SCENE @{:current nil
+             :target nil
              :scenes @{}})
 
 (defn scene/add [name scene]
@@ -436,28 +437,40 @@
   (put-in SCENE [:scenes name] scene))
 
 (defn scene/update [dt]
+  (timer/update dt)
   (let [scene (get-in SCENE [:scenes (SCENE :current)])]
     (when (and (scene :ready?) (scene :update))
       (:update scene dt))))
 
 (defn scene/draw []
-  (:draw (get-in SCENE [:scenes (SCENE :current)])))
+  (:draw (get-in SCENE [:scenes (SCENE :current)]))
+  (when (not= nil (TRANSITION :phase))
+    (transition/draw)))
 
-(defn scene/to [name]
-  (set (SCENE :current) name)
-  (let [scene (get-in SCENE [:scenes name])]
-    (when (scene :init)
-      (:init scene))
-    (set (scene :ready?) true))
-  # (timer/script (fn [wait]
-  #                 (set (TRANSITION :phase) :out)
-  #                 (timer/tween 1 TRANSITION [:percentage] 1)
-  #                 (wait 1)
-  #                 (:init (get-in SCENE [:scenes name]))
-  #                 (set (TRANSITION :phase) :in)
-  #                 (timer/tween 1 TRANSITION [:percentage] 0)
-  #                 (wait 2)))
-  )
+(defn scene/to [target &named immediate?]
+  (when (get-in SCENE [:scenes target])
+    (set (SCENE :target) target)
+    (if immediate?
+      (let [scene (get-in SCENE [:scenes target])]
+        (set (scene :current) target)
+        (when (scene :init)
+          (:init scene))
+        (set (scene :ready?) true))
+      (let [current-scene (get-in SCENE [:scenes (SCENE :current)])
+            target-scene (get-in SCENE [:scenes target])]
+        (timer/script
+          (fn [wait]
+            (set (target-scene :ready?) false)
+            (set (TRANSITION :phase) :out)
+            (timer/tween 1 TRANSITION [:percentage] 1)
+            (wait 1)
+            (set (SCENE :current) target)
+            (when (target-scene :init)
+              (:init target-scene))
+            (set (TRANSITION :phase) :in)
+            (timer/tween 1 TRANSITION [:percentage] 0)
+            (wait 1)
+            (set (target-scene :ready?) true)))))))
 
 
 
@@ -471,7 +484,7 @@
              FONT_SIZE ORANGE))
 
 (defn title/update [self dt]
-  (when (key-pressed? :enter)
+  (when (key-pressed? :space)
     (scene/to :game)))
 
 
@@ -517,7 +530,6 @@
     nil))
 
 (defn game/update [self dt]
-  (timer/update dt)
   (shaker/update dt)
 
   (when GAMEOVER?
@@ -546,10 +558,7 @@
                  (- (div W 2)
                     (div (measure-text "GAME PAUSED" FONT_SIZE) 2))
                  (- (div H 2) FONT_SIZE)
-                 FONT_SIZE ORANGE))
-
-    (when (not= nil (TRANSITION :phase))
-      (transition/draw)))
+                 FONT_SIZE ORANGE)))
 
   (when GAMEOVER?
     (draw-text "PRESS [ENTER] TO PLAY AGIAN"
@@ -572,9 +581,8 @@
                      :init game/init
                      :update game/update
                      :draw game/draw})
-  (scene/to :title)
+  (scene/to :title :immediate? true)
 
-  # (timer/every 1 |(update-in BALL [:radius] inc))
   (set-target-fps 60)
 
   (while (not (window-should-close))
