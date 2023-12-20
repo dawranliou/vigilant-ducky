@@ -461,6 +461,21 @@
 
 
 
+# Title
+(defn title/draw [self]
+  (clear-background BLACK)
+  (draw-text "ASDF"
+             (- (div W 2)
+                (div (measure-text "GAME PAUSED" FONT_SIZE) 2))
+             (- (div H 2) FONT_SIZE)
+             FONT_SIZE ORANGE))
+
+(defn title/update [self dt]
+  (when (key-pressed? :enter)
+    (scene/to :game)))
+
+
+
 # Game
 
 (defn game/init [self]
@@ -550,11 +565,14 @@
   (def canvas (load-render-texture W H))
   (set CAMERA (camera-2d :zoom 1))
   (set-texture-filter (get-render-texture-texture2d canvas) :point)
+  (scene/add :title @{:ready? true
+                      :update title/update
+                      :draw title/draw})
   (scene/add :game @{:ready? false
                      :init game/init
                      :update game/update
                      :draw game/draw})
-  (scene/to :game)
+  (scene/to :title)
 
   # (timer/every 1 |(update-in BALL [:radius] inc))
   (set-target-fps 60)
