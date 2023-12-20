@@ -426,15 +426,49 @@
 
 
 
+# Scene
+(def SCENE @{:current nil
+             :scenes @{}})
+
+(defn scene/add [name scene]
+  (when (nil? (SCENE :current))
+    (set (SCENE :current) name))
+  (put-in SCENE [:scenes name] scene))
+
+(defn scene/update [dt]
+  (let [scene (get-in SCENE [:scenes (SCENE :current)])]
+    (when (and (scene :ready?) (scene :update))
+      (:update scene dt))))
+
+(defn scene/draw []
+  (:draw (get-in SCENE [:scenes (SCENE :current)])))
+
+(defn scene/to [name]
+  (set (SCENE :current) name)
+  (let [scene (get-in SCENE [:scenes name])]
+    (when (scene :init)
+      (:init scene))
+    (set (scene :ready?) true))
+  # (timer/script (fn [wait]
+  #                 (set (TRANSITION :phase) :out)
+  #                 (timer/tween 1 TRANSITION [:percentage] 1)
+  #                 (wait 1)
+  #                 (:init (get-in SCENE [:scenes name]))
+  #                 (set (TRANSITION :phase) :in)
+  #                 (timer/tween 1 TRANSITION [:percentage] 0)
+  #                 (wait 2)))
+  )
+
+
+
 # Game
 
-(defn game/init []
-  (set CAMERA (camera-2d :zoom 1))
+(defn game/init [self]
 
   (array/clear TIMERS)
-  (merge-into TRANSITION {:phase :in :percentage 1})
-  (timer/tween 1 TRANSITION [:percentage] 0 linear
-               |(set (TRANSITION :phase) nil))
+  # (merge-into TRANSITION {:phase :in :percentage 1})
+  # (timer/tween 1 TRANSITION [:percentage] 0 linear
+  #              |(set (TRANSITION :phase) nil))
 
   (array/clear ENTITIES)
 
@@ -467,13 +501,13 @@
     (system/all ENTITIES [:break] |($ :hidden)) (set GAMEOVER? true)
     nil))
 
-(defn game/update [dt]
+(defn game/update [self dt]
   (timer/update dt)
   (shaker/update dt)
 
   (when GAMEOVER?
     (when (key-pressed? :enter)
-      (game/init)
+      (game/init self)
       (set GAMEOVER? false)))
 
   (when (not GAMEOVER?)
@@ -486,7 +520,7 @@
       (system/gc PARTICLES)
       (game/over?))))
 
-(defn game/draw []
+(defn game/draw [self]
   (clear-background BLACK)
   (when (not GAMEOVER?)
     (system/draw PARTICLES)
@@ -509,23 +543,33 @@
                (- (div H 2) 50)
                FONT_SIZE YELLOW)))
 
+
 (defn start []
   (set-trace-log-level :none)
   (init-window SCREEN_W SCREEN_H "game")
   (def canvas (load-render-texture W H))
+  (set CAMERA (camera-2d :zoom 1))
   (set-texture-filter (get-render-texture-texture2d canvas) :point)
-  (game/init)
+  (scene/add :game @{:ready? false
+                     :init game/init
+                     :update game/update
+                     :draw game/draw})
+  (scene/to :game)
+
+  # (timer/every 1 |(update-in BALL [:radius] inc))
   (set-target-fps 60)
 
   (while (not (window-should-close))
     (ev/sleep 0)
-    (game/update (get-frame-time))
+    (scene/update (get-frame-time))
     (begin-texture-mode canvas)
-    (game/draw)
+
+    (scene/draw)
     (end-texture-mode)
     (begin-drawing)
     (clear-background BLACK)
     (begin-mode-2d CAMERA)
+    # (begin-shader-mode (transition :shader))
     (draw-texture-pro (get-render-texture-texture2d canvas)
                       [0 0 W (* -1 H)]
                       [0 0 SCREEN_W SCREEN_H]
