@@ -300,7 +300,7 @@
     (loop [i :range-to [0 (math/ceil (/ H grid-size))]
            j :range-to [0 (math/ceil (/ W grid-size))]
            :let [{:percentage p} TRANSITION
-                 angle (lerp p 0 90)
+                 angle (lerp p 0 360)
                  size (lerp p 0 grid-size)
                  size/2 (div size 2)
                  rec [(+ grid-size/2 (* j grid-size))
@@ -477,7 +477,7 @@
 # Title
 (defn title/draw [self]
   (clear-background BLACK)
-  (draw-text "ASDF"
+  (draw-text "zxcv"
              (- (div W 2)
                 (div (measure-text "GAME PAUSED" FONT_SIZE) 2))
              (- (div H 2) FONT_SIZE)
@@ -521,7 +521,10 @@
                      :draw brick/draw
                      :update noop})
         (array/push ENTITIES brick)
-        (timer/tween 1 brick [:pos 1] target-y (out elastic))))))
+        (timer/script
+          (fn [wait]
+            (wait 1)
+            (timer/tween 1 brick [:pos 1] target-y (out elastic))))))))
 
 (defn game/over? []
   (cond
