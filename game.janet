@@ -500,12 +500,7 @@
 # Game
 
 (defn game/init [self]
-
   (array/clear TIMERS)
-  # (merge-into TRANSITION {:phase :in :percentage 1})
-  # (timer/tween 1 TRANSITION [:percentage] 0 linear
-  #              |(set (TRANSITION :phase) nil))
-
   (array/clear ENTITIES)
 
   (merge-into PLAYER (player/init))
@@ -600,13 +595,11 @@
     (ev/sleep 0)
     (scene/update (get-frame-time))
     (begin-texture-mode canvas)
-
     (scene/draw)
     (end-texture-mode)
     (begin-drawing)
     (clear-background BLACK)
     (begin-mode-2d CAMERA)
-    # (begin-shader-mode (transition :shader))
     (draw-texture-pro (get-render-texture-texture2d canvas)
                       [0 0 W (* -1 H)]
                       [0 0 SCREEN_W SCREEN_H]
