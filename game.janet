@@ -331,17 +331,24 @@
     (draw-rectangle-rounded [(+ 5 (* 10 i)) (- H 8) 8 2] 1 0 CHARCOAL)))
 
 (defn player/update [self dt]
+  (put-in self [:vel 0] 0)
   (when (key-down? :left)
-    (update-in self [:pos 0] - 2))
-  (when (neg? (get-in self [:pos 0]))
-    (put-in self [:pos 0] 0))
+    (put-in self [:vel 0] -100))
   (when (key-down? :right)
-    (update-in self [:pos 0] + 2))
-  (when (<= W (+ (get-in self [:pos 0]) (get-in self [:size 0])))
+    (put-in self [:vel 0] +100))
+
+  (update-in self [:pos 0] + (* dt (get-in self [:vel 0])))
+
+  (cond
+    (neg? (get-in self [:pos 0]))
+    (put-in self [:pos 0] 0)
+
+    (<= W (+ (get-in self [:pos 0]) (get-in self [:size 0])))
     (put-in self [:pos 0] (- W (get-in self [:size 0])))))
 
 (defn player/init []
   {:pos @[(- (div W 2) (div W 20)) (div (* H 7) 8)]
+   :vel @[0 0]
    :size @[24 4]
    :life PLAYER_MAX_LIFE
    :draw player/draw
