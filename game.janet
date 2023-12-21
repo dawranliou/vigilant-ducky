@@ -372,7 +372,8 @@
   # ball movement
   (if (self :active)
     (do
-      (spawn-trail (self :pos))
+      (when (zero? (% FRAME 4))
+        (spawn-trail (self :pos)))
       (update-in self [:pos 0] + (get-in self [:vel 0]))
       (update-in self [:pos 1] + (get-in self [:vel 1])))
     (do
