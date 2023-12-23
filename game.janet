@@ -1,4 +1,4 @@
-(def PI math/pi)
+(def [PI abs floor ceil] [math/pi math/abs math/floor math/ceil])
 
 # Color palette https://lospec.com/palette-list/pico-8
 (def BLACK 0x000000FF)
@@ -52,7 +52,7 @@
 
 (defn- noop [& args] nil)
 
-(defn math/sign [n]
+(defn sign [n]
   (cond
     (pos? n) 1
     (neg? n) -1
@@ -153,7 +153,7 @@
   (update-in self [:pos 1] + (get-in self [:vel 1])))
 
 (defn pixel-particle/draw [{:pos pos :color color}]
-  (draw-pixel ;(map math/floor pos) color))
+  (draw-pixel ;(map floor pos) color))
 
 (defn pixel-particle/init [pos vel age &opt fall?]
   @{:pos @[;pos]
@@ -172,8 +172,8 @@
   (let [ang (* 2 PI (math/rng-uniform RNG))
         ox (* (math/cos ang) (BALL :radius) 0.2)
         oy (* (math/sin ang) (BALL :radius) 0.2)]
-    (pixel-particle/add [(math/floor (+ x ox))
-                         (math/floor (+ y oy))]
+    (pixel-particle/add [(floor (+ x ox))
+                         (floor (+ y oy))]
                         [0 0]
                         (+ 15 (math/rng-int RNG 15)))))
 
@@ -304,8 +304,8 @@
 (defn transition/draw []
   (let [grid-size 16
         grid-size/2 (div grid-size 2)]
-    (loop [i :range-to [0 (math/ceil (/ H grid-size))]
-           j :range-to [0 (math/ceil (/ W grid-size))]
+    (loop [i :range-to [0 (ceil (/ H grid-size))]
+           j :range-to [0 (ceil (/ W grid-size))]
            :let [{:percentage p} TRANSITION
                  angle (lerp p 0 360)
                  size (lerp p 0 grid-size)
