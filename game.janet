@@ -52,6 +52,12 @@
 
 (defn- noop [& args] nil)
 
+(defn math/sign [n]
+  (cond
+    (pos? n) 1
+    (neg? n) -1
+    :else 0))
+
 (defn out [f]
   (fn [s & args]
     (- 1 (f (- 1 s) ;args))))
@@ -179,6 +185,7 @@
       (pixel-particle/add pos [dx dy] 60 true))))
 
 (defn dust-particle/update [self dt]
+  # adaptive from https://tic80.com/play?cart=1983
   (var final-update? false)
   (let [{:friction friction :radius r :vel [vx vy] :tick tick :colors colors} self]
     (update-in self [:pos 0] + vx)
@@ -398,7 +405,7 @@
       (update PLAYER :life + -1)))
 
   # collision: ball vs player
-  (let [{:pos [x y] :size [w h]} PLAYER
+  (let [{:pos [x y] :vel [vx] :size [w h]} PLAYER
         {:pos [bx by] :radius br :vel [bvx bvy]} self]
     (when (check-collision-circle-rec [bx by] br [x y w h])
       (shaker/start 4 10)
