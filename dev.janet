@@ -1,4 +1,4 @@
-#! /usr/bin/env janet
+#!/usr/bin/env -S jpm -l janet
 (def DEV true)
 (setdyn *redef* true)
 (setdyn *debug* true)
